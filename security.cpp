@@ -42,35 +42,10 @@ EVP_PKEY* security::genKey() {
 void security::freeKey(EVP_PKEY* key) {EVP_PKEY_free(key);}
 
 ByteArray security::extractPublicKey(EVP_PKEY* key_pair) {
-  EC_KEY* ec_key = EVP_PKEY_get1_EC_KEY(key_pair);
-    EC_POINT* ec_point = const_cast<EC_POINT*>(EC_KEY_get0_public_key(ec_key));
-
-    EVP_PKEY* public_key = EVP_PKEY_new();
-    EC_KEY* public_ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-
-    EC_KEY_set_public_key(public_ec_key, ec_point);
-    EVP_PKEY_set1_EC_KEY(public_key, public_ec_key);
-
-
-    EC_KEY *temp_ec_key = EVP_PKEY_get0_EC_KEY(public_key);
-
-    if(temp_ec_key == NULL) handleErrors();
-
-    const EC_GROUP* group = EC_KEY_get0_group(temp_ec_key);
-    point_conversion_form_t form = EC_GROUP_get_point_conversion_form(group);
-
-    unsigned char* pub_key_buffer;
-    size_t length = EC_KEY_key2buf(temp_ec_key, form, &pub_key_buffer, NULL);
-    if(!length) handleErrors();
-    ByteArray data(pub_key_buffer, length);
-
-    OPENSSL_free(pub_key_buffer);
-    EVP_PKEY_free(public_key);
-    EC_KEY_free(ec_key);
-    EC_KEY_free(public_ec_key);
-    EC_POINT_free(ec_point);
-
-    return data;
+  ByteArray data(i2d_PublicKey(key_pair, nullptr));
+  unsigned char* ptr = data.begin();
+  i2d_PublicKey(key_pair, &ptr);
+  return data;
 }
 
 ByteArray security::extractPrivateKey(EVP_PKEY* key_pair) {
